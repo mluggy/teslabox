@@ -70,11 +70,20 @@ exports.start = (cb) => {
           },
           (cb) => {
             noAudioOutputFile = row.replace('event.json', `${event.type}-no-audio.mp4`)
+
+            fs.stat(noAudioOutputFile, (err, result) => {
+              if (err || !result) {
+                exec(`tesla_dashcam --no-check_for_update --no-notification --exclude_subdirs --temp_dir ${ramDir}/temp ${event.camera === 'rear' ? '--swap_frontrear ' : ''} --layout WIDESCREEN --quality ${archiveQuality} --compression ${archiveCompression} --sentry_start_offset=-${Math.ceil(archiveSeconds / 2)} --sentry_end_offset=${archiveSeconds - Math.ceil(archiveSeconds / 2)} --start_offset=-${archiveSeconds} ${row.replace('event.json', '')} --timestamp_format="TeslaBox ${_.upperFirst(event.type)} %Y-%m-%d %X" --output ${noAudioOutputFile}`, cb)
+              } else {
+                cb()
+              }
+            })
+          },
+          (cb) => {
             outputFile = row.replace('event.json', `${event.type}.mp4`)
 
             fs.stat(outputFile, (err, result) => {
               if (err || !result) {
-                exec(`tesla_dashcam --no-check_for_update --no-notification --exclude_subdirs --temp_dir ${ramDir}/temp ${event.camera === 'rear' ? '--swap_frontrear ' : ''} --layout WIDESCREEN --quality ${archiveQuality} --compression ${archiveCompression} --sentry_start_offset=-${Math.ceil(archiveSeconds / 2)} --sentry_end_offset=${archiveSeconds - Math.ceil(archiveSeconds / 2)} --start_offset=-${archiveSeconds} ${row.replace('event.json', '')} --timestamp_format="TeslaBox ${_.upperFirst(event.type)} %Y-%m-%d %X" --output ${noAudioOutputFile}`, cb)
                 exec(`ffmpeg -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -i ${noAudioOutputFile} -c:v copy -c:a aac -shortest ${outputFile}`, cb)
               } else {
                 cb()
